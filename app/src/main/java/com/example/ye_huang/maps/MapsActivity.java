@@ -196,23 +196,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      */
     protected static double distanceBetween(LatLng from, LatLng to) {
         double earthRadius = 6371009;
-        return computeAngleBetween(from, to) * earthRadius;
-    }
-    private static double havDistance(double lat1, double lat2, double dLng) {
-        return hav(lat1 - lat2) + hav(dLng) * cos(lat1) * cos(lat2);
-    }
-    private static double computeAngleBetween(LatLng from, LatLng to) {
-        return distanceRadians(toRadians(from.latitude), toRadians(from.longitude),
-                toRadians(to.latitude), toRadians(to.longitude));
-    }
-    private static double distanceRadians(double lat1, double lng1, double lat2, double lng2) {
-        return arcHav(havDistance(lat1, lat2, lng1 - lng2));
-    }
-    private static double arcHav(double x) {
-        return 2 * asin(sqrt(x));
-    }
-    private static double hav(double x) {
-        double sinHalf = sin(x * 0.5);
-        return sinHalf * sinHalf;
+        double dLat = toRadians(from.latitude) - toRadians(to.latitude);
+        double dLng = toRadians(from.longitude) - toRadians(to.longitude);
+        return ((sin((dLat)*0.5))*(sin((dLat)*0.5))
+                + (sin((dLng)*0.5))*(sin((dLng)*0.5))
+                * cos(from.latitude) * cos(to.latitude)) * earthRadius;
     }
 }
