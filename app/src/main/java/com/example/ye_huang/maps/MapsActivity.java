@@ -2,6 +2,7 @@ package com.example.ye_huang.maps;
 
 import java.util.*;
 import java.lang.*;
+import static java.lang.Math.*;
 
 import android.Manifest;
 import android.content.Context;
@@ -98,11 +99,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     Implementing favorite location(s) detection
                  */
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), 13));
-                if (detectIfClosed(location)) {
-                //TODO: Need function call to prompt user
-                }
-                else {
-
+                /*
+                    A loop go through the list of Fav. Loc. to see if closed to and if visiting
+                    "usersFavLocsList" is the name of the list which storing the user's Fav. Locs. - can be modify later
+                 */
+                for(int i = 0; i < usersFavLocsList.size(); i++) {
+                    //Checking if user is visiting.
+                    // "< 5" means if the distance between user and the Fav. Loc. is less than 5 meters
+                    if (distanceBetween(new LatLng(location.getLatitude(),
+                            location.getLongitude()), new Latlng(usersFavLocsList.get(i).getLatitude(),
+                            usersFavLocsList.get(i).location.getLongitude())) < 5) {
+                        //TODO: Need function call to push notification to partner that user is visiting Fav. Loc
+                    }
+                    //Checking if user is closed to
+                    //"< 805" means if the distance between user and the Fav.Loc is less than 805 meters which is 0.5 mile
+                    if (distanceBetween(new LatLng(location.getLatitude(),
+                            location.getLongitude()), new Latlng(usersFavLocsList.get(i).getLatitude(),
+                            usersFavLocsList.get(i).location.getLongitude())) < 805) {
+                        //TODO: Need function call to prompt user that a Fav. Loc. is closed
+                    }
                 }
             }
 
@@ -177,12 +192,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
     /*
-        Helper function for detecting if closed to Fav. Loc.
+        Helper function to compute the distance between two LatLngs, in Meters.
      */
-    protected boolean detectIfClosed(Location location) {
-        //Location location1 = new Location(32.87174,-117.23396);
-        //if(location.equals(latLng))
-        return true;
-        //return false;
+    protected static double distanceBetween(LatLng from, LatLng to) {
+        double earthRadius = 6371009;
+        return computeAngleBetween(from, to) * earthRadius;
+    }
+    private static double havDistance(double lat1, double lat2, double dLng) {
+        return hav(lat1 - lat2) + hav(dLng) * cos(lat1) * cos(lat2);
+    }
+    private static double computeAngleBetween(LatLng from, LatLng to) {
+        return distanceRadians(toRadians(from.latitude), toRadians(from.longitude),
+                toRadians(to.latitude), toRadians(to.longitude));
+    }
+    private static double distanceRadians(double lat1, double lng1, double lat2, double lng2) {
+        return arcHav(havDistance(lat1, lat2, lng1 - lng2));
+    }
+    private static double arcHav(double x) {
+        return 2 * asin(sqrt(x));
+    }
+    private static double hav(double x) {
+        double sinHalf = sin(x * 0.5);
+        return sinHalf * sinHalf;
     }
 }
