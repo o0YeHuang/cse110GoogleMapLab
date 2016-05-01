@@ -1,18 +1,28 @@
 package com.example.ye_huang.maps;
 
+import java.util.*;
+import java.lang.*;
+
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Button;
+import android.view.View;
+
 
 //import com.google.android.gms.location.LocationListener;
+//import com.google.android.gms.identity.intents.Address;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -24,6 +34,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private GoogleMap mMap;
     private TextView mTapTextView;
+    private Button mSearchButton;
+    private EditText mSearchView;
 
 
     @Override
@@ -35,6 +47,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
         mTapTextView = (TextView) findViewById(R.id.latlongLocation);
+        mSearchButton = (Button) findViewById(R.id.searchButton);
+        mSearchView = (EditText) findViewById(R.id.searchView);
     }
 
 
@@ -55,24 +69,41 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(32.8800604,-117.2362022), 13));
         mMap.getUiSettings().setZoomControlsEnabled(true);
-
-
+        /*
+            Setup OnMapClickListener
+         */
         GoogleMap.OnMapClickListener clickListener = new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
-                //tested and worked, need function call from UI
+                /*
+                    Tested and Worked.
+                    TODO:Need function call to create and store the favorite location.
+                 */
                 mTapTextView.setText("This location is at: " + latLng);
 
             }
         };
         mMap.setOnMapClickListener(clickListener);
 
+        /*
+            Track current location and update the marker.
+            TODO:Need to notify user when user is closed to favorite location(s).
+         */
         LocationListener locationListener = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
-                mMap.clear();
-                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), 15));
-                mMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(), location.getLongitude())).title("updated path"));
+                //mMap.clear();
+                //mMap.addMarker(new MarkerOptions().position(new LatLng(location.getLatitude(), location.getLongitude())).title("updated path"));
+                /*
+                    Implementing favorite location(s) detection
+                 */
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(location.getLatitude(), location.getLongitude()), 13));
+                if (detectIfClosed(location)) {
+                //TODO: Need function call to prompt user
+                }
+                else {
+
+                }
             }
 
             public void onStatusChanged(String provider, int status, Bundle extras) {}
@@ -84,7 +115,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         LocationManager locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         String locationProvider = LocationManager.GPS_PROVIDER;
-
+        //Checking permission
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -96,7 +127,62 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         locationManager.requestLocationUpdates(locationProvider, 0, 0, locationListener);
 
 
+        /*
+            Implementing Searching by address.
+            TODO: Need to implement adding by address - (Can be done by adding another "add" button)
+         */
+        mSearchButton.setOnClickListener(new android.view.View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+
+
+                String g = mSearchView.getText().toString();
+
+                Geocoder geocoder = new Geocoder(getBaseContext());
+                List<Address> addresses = null;
+
+                try {
+                    // Getting a maximum of 3 Address that matches the input
+                    // text
+                    addresses = geocoder.getFromLocationName(g, 3);
+                    if (addresses != null && !addresses.equals(""))
+                        searchAddresses(addresses);
+
+                } catch (Exception e) {
+
+                }
+
+            }
+        });
+
+
     }
+    /*
+        Helper function for search by address.
+     */
+    protected void searchAddresses(List<Address> addresses) {
 
+        Address address = (Address) addresses.get(0);
+        LatLng latLng = new LatLng(address.getLatitude(), address.getLongitude());
 
+        String.format("%s, %s", address.getMaxAddressLineIndex() > 0 ? address.getAddressLine(0) : "", address.getCountryName());
+
+        mMap.clear();
+        mMap.addMarker(new MarkerOptions().position(latLng).title(String.format("%s, %s",
+                address.getMaxAddressLineIndex() > 0 ? address.getAddressLine(0) : "",
+                address.getCountryName())));
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(15));
+
+    }
+    /*
+        Helper function for detecting if closed to Fav. Loc.
+     */
+    protected boolean detectIfClosed(Location location) {
+        //Location location1 = new Location(32.87174,-117.23396);
+        //if(location.equals(latLng))
+        return true;
+        //return false;
+    }
 }
